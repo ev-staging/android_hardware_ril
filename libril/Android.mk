@@ -28,6 +28,10 @@ ifeq ($(SIM_COUNT), 2)
     LOCAL_CFLAGS += -DANDROID_SIM_COUNT_2
 endif
 
+ifeq ($(BOARD_RIL_NO_CELLINFOLIST),true)
+    LOCAL_CFLAGS += -DRIL_NO_CELL_INFO_LIST
+endif
+
 LOCAL_C_INCLUDES += external/nanopb-c
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../include
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/../include
