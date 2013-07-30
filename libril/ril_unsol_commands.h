@@ -50,7 +50,9 @@
     {RIL_UNSOL_EXIT_EMERGENCY_CALLBACK_MODE, radio::exitEmergencyCallbackModeInd, WAKE_PARTIAL},
     {RIL_UNSOL_RIL_CONNECTED, radio::rilConnectedInd, WAKE_PARTIAL},
     {RIL_UNSOL_VOICE_RADIO_TECH_CHANGED, radio::voiceRadioTechChangedInd, WAKE_PARTIAL},
+#ifndef RIL_NO_CELL_INFO_LIST
     {RIL_UNSOL_CELL_INFO_LIST, radio::cellInfoListInd, WAKE_PARTIAL},
+#endif
     {RIL_UNSOL_RESPONSE_IMS_NETWORK_STATE_CHANGED, radio::imsNetworkStateChangedInd, WAKE_PARTIAL},
     {RIL_UNSOL_UICC_SUBSCRIPTION_STATUS_CHANGED, radio::subscriptionStatusChangedInd, WAKE_PARTIAL},
     {RIL_UNSOL_SRVCC_STATE_NOTIFY, radio::srvccStateNotifyInd, WAKE_PARTIAL},
