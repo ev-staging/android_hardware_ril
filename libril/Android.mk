@@ -28,6 +28,10 @@ ifeq ($(SIM_COUNT), 2)
     LOCAL_CFLAGS += -DANDROID_SIM_COUNT_2
 endif
 
+ifeq ($(BOARD_RIL_NO_CELLINFOLIST),true)
+LOCAL_CFLAGS += -DRIL_NO_CELL_INFO_LIST
+endif
+
 LOCAL_C_INCLUDES += $(TARGET_OUT_HEADER)/librilutils
 LOCAL_C_INCLUDES += external/nanopb-c
 
