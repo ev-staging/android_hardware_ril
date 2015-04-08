@@ -24,6 +24,10 @@ ifeq ($(SIM_COUNT), 2)
     LOCAL_CFLAGS += -DANDROID_SIM_COUNT_2
 endif
 
+ifeq ($(TARGET_USE_QCOM_RIL),true)
+    LOCAL_CFLAGS += -DUSE_QCOM_RIL
+endif
+
 LOCAL_MODULE:= rild
 LOCAL_MODULE_TAGS := optional
 
@@ -41,6 +45,10 @@ LOCAL_SHARED_LIBRARIES := \
 	libcutils \
 
 LOCAL_CFLAGS := \
+
+ifeq ($(TARGET_USE_QCOM_RIL),true)
+    LOCAL_CFLAGS += -DUSE_QCOM_RIL
+endif
 
 LOCAL_MODULE:= radiooptions
 LOCAL_MODULE_TAGS := debug

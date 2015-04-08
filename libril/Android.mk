@@ -23,6 +23,10 @@ ifeq ($(SIM_COUNT), 2)
     LOCAL_CFLAGS += -DANDROID_SIM_COUNT_2
 endif
 
+ifeq ($(TARGET_USE_QCOM_RIL),true)
+    LOCAL_CFLAGS += -DUSE_QCOM_RIL
+endif
+
 LOCAL_MODULE:= libril
 
 include $(BUILD_SHARED_LIBRARY)
@@ -42,6 +46,10 @@ LOCAL_STATIC_LIBRARIES := \
     librilutils_static
 
 LOCAL_CFLAGS :=
+
+ifeq ($(TARGET_USE_QCOM_RIL),true)
+    LOCAL_CFLAGS += -DUSE_QCOM_RIL
+endif
 
 LOCAL_MODULE:= libril_static
 

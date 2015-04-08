@@ -303,7 +303,13 @@ static int responseCdmaCallWaiting(Parcel &p,void *response, size_t responselen)
 static int responseSimRefresh(Parcel &p, void *response, size_t responselen);
 static int responseCellInfoList(Parcel &p, void *response, size_t responselen);
 static int responseHardwareConfig(Parcel &p, void *response, size_t responselen);
+#ifdef USE_QCOM_RIL
+static int responseSSData(Parcel &p, void *response, size_t responselen);
+#endif
 static int responseDcRtInfo(Parcel &p, void *response, size_t responselen);
+#ifdef USE_QCOM_RIL
+static int responseGetDataCallProfile(Parcel &p, void *response, size_t responselen);
+#endif
 static int responseRadioCapability(Parcel &p, void *response, size_t responselen);
 static int responseSSData(Parcel &p, void *response, size_t responselen);
 
@@ -1108,7 +1114,9 @@ constructCdmaSms(Parcel &p, RequestInfo *pRI, RIL_CDMA_SMS_Message& rcsm) {
     uint8_t ut;
     status_t status;
     int32_t digitCount;
+#ifdef USE_QCOM_RIL
     int digitLimit;
+#endif
 
     memset(&rcsm, 0, sizeof(rcsm));
 
@@ -1136,8 +1144,12 @@ constructCdmaSms(Parcel &p, RequestInfo *pRI, RIL_CDMA_SMS_Message& rcsm) {
     status = p.read(&ut,sizeof(ut));
     rcsm.sAddress.number_of_digits= (uint8_t) ut;
 
+#ifdef USE_QCOM_RIL
     digitLimit= MIN((rcsm.sAddress.number_of_digits), RIL_CDMA_SMS_ADDRESS_MAX);
     for(digitCount =0 ; digitCount < digitLimit; digitCount ++) {
+#else
+    for(digitCount = 0 ; digitCount < RIL_CDMA_SMS_ADDRESS_MAX; digitCount ++) {
+#endif
         status = p.read(&ut,sizeof(ut));
         rcsm.sAddress.digits[digitCount] = (uint8_t) ut;
     }
@@ -1151,8 +1163,12 @@ constructCdmaSms(Parcel &p, RequestInfo *pRI, RIL_CDMA_SMS_Message& rcsm) {
     status = p.read(&ut,sizeof(ut));
     rcsm.sSubAddress.number_of_digits = (uint8_t) ut;
 
+#ifdef USE_QCOM_RIL
     digitLimit= MIN((rcsm.sSubAddress.number_of_digits), RIL_CDMA_SMS_SUBADDRESS_MAX);
     for(digitCount =0 ; digitCount < digitLimit; digitCount ++) {
+#else
+    for(digitCount = 0 ; digitCount < RIL_CDMA_SMS_SUBADDRESS_MAX; digitCount ++) {
+#endif
         status = p.read(&ut,sizeof(ut));
         rcsm.sSubAddress.digits[digitCount] = (uint8_t) ut;
     }
@@ -1160,8 +1176,12 @@ constructCdmaSms(Parcel &p, RequestInfo *pRI, RIL_CDMA_SMS_Message& rcsm) {
     status = p.readInt32(&t);
     rcsm.uBearerDataLen = (int) t;
 
+#ifdef USE_QCOM_RIL
     digitLimit= MIN((rcsm.uBearerDataLen), RIL_CDMA_SMS_BEARER_DATA_MAX);
     for(digitCount =0 ; digitCount < digitLimit; digitCount ++) {
+#else
+    for(digitCount = 0 ; digitCount < RIL_CDMA_SMS_BEARER_DATA_MAX; digitCount ++) {
+#endif
         status = p.read(&ut, sizeof(ut));
         rcsm.aBearerData[digitCount] = (uint8_t) ut;
     }
@@ -1514,6 +1534,9 @@ static void dispatchRilCdmaSmsWriteArgs(Parcel &p, RequestInfo *pRI) {
     uint8_t  uct;
     status_t status;
     int32_t  digitCount;
+#ifdef USE_QCOM_RIL
+    int32_t  digitLimit;
+#endif
 
     memset(&rcsw, 0, sizeof(rcsw));
 
@@ -1543,8 +1566,13 @@ static void dispatchRilCdmaSmsWriteArgs(Parcel &p, RequestInfo *pRI) {
 
     status = p.read(&uct,sizeof(uct));
     rcsw.message.sAddress.number_of_digits = (uint8_t) uct;
+#ifdef USE_QCOM_RIL
+    digitLimit = MIN((rcsw.message.sAddress.number_of_digits), RIL_CDMA_SMS_ADDRESS_MAX);
 
+    for(digitCount = 0 ; digitCount < digitLimit; digitCount ++) {
+#else
     for(digitCount = 0 ; digitCount < RIL_CDMA_SMS_ADDRESS_MAX; digitCount ++) {
+#endif
         status = p.read(&uct,sizeof(uct));
         rcsw.message.sAddress.digits[digitCount] = (uint8_t) uct;
     }
@@ -1557,16 +1585,26 @@ static void dispatchRilCdmaSmsWriteArgs(Parcel &p, RequestInfo *pRI) {
 
     status = p.read(&uct,sizeof(uct));
     rcsw.message.sSubAddress.number_of_digits = (uint8_t) uct;
+#ifdef USE_QCOM_RIL
+    digitLimit = MIN((rcsw.message.sSubAddress.number_of_digits), RIL_CDMA_SMS_SUBADDRESS_MAX);
 
+    for(digitCount = 0 ; digitCount < digitLimit; digitCount ++) {
+#else
     for(digitCount = 0 ; digitCount < RIL_CDMA_SMS_SUBADDRESS_MAX; digitCount ++) {
+#endif
         status = p.read(&uct,sizeof(uct));
         rcsw.message.sSubAddress.digits[digitCount] = (uint8_t) uct;
     }
 
     status = p.readInt32(&t);
     rcsw.message.uBearerDataLen = (int) t;
+#ifdef USE_QCOM_RIL
+    digitLimit = MIN((rcsw.message.uBearerDataLen), RIL_CDMA_SMS_BEARER_DATA_MAX);
 
+    for(digitCount = 0 ; digitCount < digitLimit; digitCount ++) {
+#else
     for(digitCount = 0 ; digitCount < RIL_CDMA_SMS_BEARER_DATA_MAX; digitCount ++) {
+#endif
         status = p.read(&uct, sizeof(uct));
         rcsw.message.aBearerData[digitCount] = (uint8_t) uct;
     }
@@ -2720,6 +2758,7 @@ static int responseCdmaInformationRecords(Parcel &p,
         infoRec = &p_cur->infoRec[i];
         p.writeInt32(infoRec->name);
         switch (infoRec->name) {
+#ifndef USE_QCOM_RIL
             case RIL_CDMA_DISPLAY_INFO_REC:
             case RIL_CDMA_EXTENDED_DISPLAY_INFO_REC:
                 if (infoRec->rec.display.alpha_len >
@@ -2730,6 +2769,23 @@ static int responseCdmaInformationRecords(Parcel &p,
                          CDMA_ALPHA_INFO_BUFFER_LENGTH);
                     return RIL_ERRNO_INVALID_RESPONSE;
                 }
+#else
+                // Write as a byteArray
+                p.writeInt32(infoRec->rec.display.alpha_len);
+                p.write(infoRec->rec.display.alpha_buf,
+                        infoRec->rec.display.alpha_len);
+                break;
+            case RIL_CDMA_DISPLAY_INFO_REC:
+            case RIL_CDMA_EXTENDED_DISPLAY_INFO_REC:
+                if (infoRec->rec.display.alpha_len >
+                                         CDMA_ALPHA_INFO_BUFFER_LENGTH) {
+                    RLOGE("invalid display info response length %d \
+                          expected not more than %d\n",
+                         (int)infoRec->rec.display.alpha_len,
+                         CDMA_ALPHA_INFO_BUFFER_LENGTH);
+                    return RIL_ERRNO_INVALID_RESPONSE;
+                }
+#endif
                 string8 = (char*) malloc((infoRec->rec.display.alpha_len + 1)
                                                              * sizeof(char) );
                 for (int i = 0 ; i < infoRec->rec.display.alpha_len ; i++) {
@@ -3029,9 +3085,12 @@ static int responseSimRefresh(Parcel &p, void *response, size_t responselen) {
         RLOGE("responseSimRefresh: invalid response: NULL");
         return RIL_ERRNO_INVALID_RESPONSE;
     }
-
     startResponse;
+#ifndef USE_QCOM_RIL
     if (s_callbacks.version == 7) {
+#else
+    if (s_callbacks.version >= 7) {
+#endif
         RIL_SimRefreshResponse_v7 *p_cur = ((RIL_SimRefreshResponse_v7 *) response);
         p.writeInt32(p_cur->result);
         p.writeInt32(p_cur->ef_id);
@@ -3576,6 +3635,44 @@ static int responseDcRtInfo(Parcel &p, void *response, size_t responselen)
 
     return 0;
 }
+
+#ifdef USE_QCOM_RIL
+/* response is the count and the list of RIL_DataCallProfileInfo */
+static int responseGetDataCallProfile(Parcel &p, void *response, size_t responselen) {
+    int num = 0;
+
+    RLOGD("[OMH>]> %d", responselen);
+
+    if (response == NULL && responselen != 0) {
+        RLOGE("invalid response: NULL");
+        return RIL_ERRNO_INVALID_RESPONSE;
+    }
+
+    RLOGD("[OMH>]> processing response");
+
+    /* number of profile info's */
+    num = *((int *) response);
+    if (num > (responselen / sizeof(RIL_DataCallProfileInfo))) {
+        num = responselen / sizeof(RIL_DataCallProfileInfo);
+    }
+    p.writeInt32(num);
+
+    RIL_DataCallProfileInfo *p_cur = ((RIL_DataCallProfileInfo *) ((int *)response + 1));
+
+    startResponse;
+    for (int i = 0 ; i < num ; i++) {
+        p.writeInt32(p_cur->profileId);
+        p.writeInt32(p_cur->priority);
+        appendPrintBuf("%s[profileId=%d,priority=%d],", printBuf,
+                p_cur->profileId, p_cur->priority);
+        p_cur++;
+    }
+    removeLastChar;
+    closeResponse;
+
+    return 0;
+}
+#endif
 
 /**
  * A write on the wakeup fd is done just to pop us out of select()
@@ -4804,7 +4901,11 @@ requestToString(int request) {
         case RIL_REQUEST_ENTER_SIM_PUK2: return "ENTER_SIM_PUK2";
         case RIL_REQUEST_CHANGE_SIM_PIN: return "CHANGE_SIM_PIN";
         case RIL_REQUEST_CHANGE_SIM_PIN2: return "CHANGE_SIM_PIN2";
+#ifndef USE_QCOM_RIL
         case RIL_REQUEST_ENTER_NETWORK_DEPERSONALIZATION: return "ENTER_NETWORK_DEPERSONALIZATION";
+#else
+        case RIL_REQUEST_ENTER_DEPERSONALIZATION_CODE: return "ENTER_DEPERSONALIZATION_CODE";
+#endif
         case RIL_REQUEST_GET_CURRENT_CALLS: return "GET_CURRENT_CALLS";
         case RIL_REQUEST_DIAL: return "DIAL";
         case RIL_REQUEST_GET_IMSI: return "GET_IMSI";
@@ -4901,6 +5002,9 @@ requestToString(int request) {
         case RIL_REQUEST_ACKNOWLEDGE_INCOMING_GSM_SMS_WITH_PDU: return "RIL_REQUEST_ACKNOWLEDGE_INCOMING_GSM_SMS_WITH_PDU";
         case RIL_REQUEST_STK_SEND_ENVELOPE_WITH_STATUS: return "RIL_REQUEST_STK_SEND_ENVELOPE_WITH_STATUS";
         case RIL_REQUEST_VOICE_RADIO_TECH: return "VOICE_RADIO_TECH";
+#ifdef USE_QCOM_RIL
+        case RIL_REQUEST_WRITE_SMS_TO_SIM: return "WRITE_SMS_TO_SIM";
+#endif
         case RIL_REQUEST_GET_CELL_INFO_LIST: return"GET_CELL_INFO_LIST";
         case RIL_REQUEST_SET_UNSOL_CELL_INFO_LIST_RATE: return"SET_UNSOL_CELL_INFO_LIST_RATE";
         case RIL_REQUEST_SET_INITIAL_ATTACH_APN: return "RIL_REQUEST_SET_INITIAL_ATTACH_APN";
@@ -4910,6 +5014,9 @@ requestToString(int request) {
         case RIL_REQUEST_SIM_OPEN_CHANNEL: return "SIM_OPEN_CHANNEL";
         case RIL_REQUEST_SIM_CLOSE_CHANNEL: return "SIM_CLOSE_CHANNEL";
         case RIL_REQUEST_SIM_TRANSMIT_APDU_CHANNEL: return "SIM_TRANSMIT_APDU_CHANNEL";
+#ifdef USE_QCOM_RIL
+        case RIL_REQUEST_SIM_GET_ATR: return "SIM_GET_ATR";
+#endif
         case RIL_REQUEST_GET_RADIO_CAPABILITY: return "RIL_REQUEST_GET_RADIO_CAPABILITY";
         case RIL_REQUEST_SET_RADIO_CAPABILITY: return "RIL_REQUEST_SET_RADIO_CAPABILITY";
         case RIL_REQUEST_SET_UICC_SUBSCRIPTION: return "SET_UICC_SUBSCRIPTION";
@@ -4919,6 +5026,9 @@ requestToString(int request) {
         case RIL_REQUEST_GET_DC_RT_INFO: return "GET_DC_RT_INFO";
         case RIL_REQUEST_SET_DC_RT_INFO_RATE: return "SET_DC_RT_INFO_RATE";
         case RIL_REQUEST_SET_DATA_PROFILE: return "SET_DATA_PROFILE";
+#ifdef USE_QCOM_RIL
+        case RIL_REQUEST_GET_DATA_CALL_PROFILE: return "GET_DATA_CALL_PROFILE";
+#endif
         case RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED: return "UNSOL_RESPONSE_RADIO_STATE_CHANGED";
         case RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED: return "UNSOL_RESPONSE_CALL_STATE_CHANGED";
         case RIL_UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED: return "UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED";
@@ -4929,6 +5039,9 @@ requestToString(int request) {
         case RIL_UNSOL_ON_USSD_REQUEST: return "UNSOL_ON_USSD_REQUEST(obsolete)";
         case RIL_UNSOL_NITZ_TIME_RECEIVED: return "UNSOL_NITZ_TIME_RECEIVED";
         case RIL_UNSOL_SIGNAL_STRENGTH: return "UNSOL_SIGNAL_STRENGTH";
+#ifdef USE_QCOM_RIL
+        case RIL_UNSOL_SUPP_SVC_NOTIFICATION: return "UNSOL_SUPP_SVC_NOTIFICATION";
+#endif
         case RIL_UNSOL_STK_SESSION_END: return "UNSOL_STK_SESSION_END";
         case RIL_UNSOL_STK_PROACTIVE_COMMAND: return "UNSOL_STK_PROACTIVE_COMMAND";
         case RIL_UNSOL_STK_EVENT_NOTIFY: return "UNSOL_STK_EVENT_NOTIFY";

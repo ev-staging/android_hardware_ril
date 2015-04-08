@@ -22,7 +22,11 @@
     {RIL_REQUEST_ENTER_SIM_PUK2, dispatchStrings, responseInts},
     {RIL_REQUEST_CHANGE_SIM_PIN, dispatchStrings, responseInts},
     {RIL_REQUEST_CHANGE_SIM_PIN2, dispatchStrings, responseInts},
+#ifndef USE_QCOM_RIL
     {RIL_REQUEST_ENTER_NETWORK_DEPERSONALIZATION, dispatchStrings, responseInts},
+#else
+    {RIL_REQUEST_ENTER_DEPERSONALIZATION_CODE, dispatchStrings, responseInts},
+#endif
     {RIL_REQUEST_GET_CURRENT_CALLS, dispatchVoid, responseCallList},
     {RIL_REQUEST_DIAL, dispatchDial, responseVoid},
     {RIL_REQUEST_GET_IMSI, dispatchStrings, responseString},
@@ -146,3 +150,7 @@
     {RIL_REQUEST_SHUTDOWN, dispatchVoid, responseVoid},
     {RIL_REQUEST_GET_RADIO_CAPABILITY, dispatchVoid, responseRadioCapability},
     {RIL_REQUEST_SET_RADIO_CAPABILITY, dispatchRadioCapability, responseRadioCapability},
+#ifdef USE_QCOM_RIL
+    {RIL_REQUEST_GET_DATA_CALL_PROFILE, dispatchInts, responseGetDataCallProfile},
+    {RIL_REQUEST_SIM_GET_ATR, dispatchInts, responseString},
+#endif

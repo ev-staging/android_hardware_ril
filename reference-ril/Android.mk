@@ -31,6 +31,10 @@ ifeq ($(TARGET_DEVICE),dream)
   LOCAL_CFLAGS += -DPOLL_CALL_STATE -DUSE_QMI
 endif
 
+ifeq ($(TARGET_USE_QCOM_RIL),true)
+    LOCAL_CFLAGS += -DUSE_QCOM_RIL
+endif
+
 ifeq (foo,foo)
   #build shared library
   LOCAL_SHARED_LIBRARIES += \

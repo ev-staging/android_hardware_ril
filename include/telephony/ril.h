@@ -32,6 +32,12 @@ extern "C" {
 #endif
 
 
+#ifdef USE_QCOM_RIL
+#ifndef RIL_QCOM_VERSION
+#define RIL_QCOM_VERSION 3
+#endif
+#endif
+
 #if defined(ANDROID_SIM_COUNT_2)
 #define SIM_COUNT 2
 #elif defined(ANDROID_SIM_COUNT_3)
@@ -113,8 +119,12 @@ typedef enum {
     RIL_E_SS_MODIFIED_TO_DIAL = 24,             /* SS request modified to DIAL */
     RIL_E_SS_MODIFIED_TO_USSD = 25,             /* SS request modified to USSD */
     RIL_E_SUBSCRIPTION_NOT_SUPPORTED = 26,      /* Subscription not supported by RIL */
+#ifndef USE_QCOM_RIL
     RIL_E_SS_MODIFIED_TO_SS = 27                /* SS request modified to different SS request */
-
+#else
+    RIL_E_SS_MODIFIED_TO_SS = 27,               /* SS request modified to different SS request */
+    RIL_E_UNUSED = 28,
+#endif
 
 } RIL_Errno;
 
@@ -162,7 +172,12 @@ typedef enum {
     RADIO_TECH_LTE = 14,
     RADIO_TECH_HSPAP = 15, // HSPA+
     RADIO_TECH_GSM = 16, // Only supports voice
+#ifndef USE_QCOM_RIL
     RADIO_TECH_TD_SCDMA = 17
+#else
+    RADIO_TECH_TD_SCDMA = 17,
+    RADIO_TECH_IWLAN = 18
+#endif
 } RIL_RadioTechnology;
 
 typedef enum {
@@ -568,10 +583,61 @@ typedef struct {
 /* See RIL_REQUEST_LAST_CALL_FAIL_CAUSE */
 typedef enum {
     CALL_FAIL_UNOBTAINABLE_NUMBER = 1,
+#ifdef USE_QCOM_RIL
+    CALL_FAIL_NO_ROUTE_TO_DESTINATION = 3,
+    CALL_FAIL_CHANNEL_UNACCEPTABLE = 6,
+    CALL_FAIL_OPERATOR_DETERMINED_BARRING = 8,
+#endif
     CALL_FAIL_NORMAL = 16,
     CALL_FAIL_BUSY = 17,
+#ifdef USE_QCOM_RIL
+    CALL_FAIL_NO_USER_RESPONDING = 18,
+    CALL_FAIL_NO_ANSWER_FROM_USER = 19,
+    CALL_FAIL_CALL_REJECTED = 21,
+    CALL_FAIL_NUMBER_CHANGED = 22,
+    CALL_FAIL_PREEMPTION = 25,
+    CALL_FAIL_DESTINATION_OUT_OF_ORDER = 27,
+    CALL_FAIL_INVALID_NUMBER_FORMAT = 28,
+    CALL_FAIL_FACILITY_REJECTED = 29,
+    CALL_FAIL_RESP_TO_STATUS_ENQUIRY = 30,
+    CALL_FAIL_NORMAL_UNSPECIFIED = 31,
+#endif
     CALL_FAIL_CONGESTION = 34,
+#ifdef USE_QCOM_RIL
+    CALL_FAIL_NETWORK_OUT_OF_ORDER = 38,
+    CALL_FAIL_TEMPORARY_FAILURE = 41,
+    CALL_FAIL_SWITCHING_EQUIPMENT_CONGESTION = 42,
+    CALL_FAIL_ACCESS_INFORMATION_DISCARDED = 43,
+    CALL_FAIL_REQUESTED_CIRCUIT_OR_CHANNEL_NOT_AVAILABLE = 44,
+    CALL_FAIL_RESOURCES_UNAVAILABLE_OR_UNSPECIFIED = 47,
+    CALL_FAIL_QOS_UNAVAILABLE = 49,
+    CALL_FAIL_REQUESTED_FACILITY_NOT_SUBSCRIBED = 50,
+    CALL_FAIL_INCOMING_CALLS_BARRED_WITHIN_CUG = 55,
+    CALL_FAIL_BEARER_CAPABILITY_NOT_AUTHORIZED = 57,
+    CALL_FAIL_BEARER_CAPABILITY_UNAVAILABLE = 58,
+    CALL_FAIL_SERVICE_OPTION_NOT_AVAILABLE = 63,
+    CALL_FAIL_BEARER_SERVICE_NOT_IMPLEMENTED = 65,
+#endif
     CALL_FAIL_ACM_LIMIT_EXCEEDED = 68,
+#ifdef USE_QCOM_RIL
+    CALL_FAIL_REQUESTED_FACILITY_NOT_IMPLEMENTED = 69,
+    CALL_FAIL_ONLY_DIGITAL_INFORMATION_BEARER_AVAILABLE = 70,
+    CALL_FAIL_SERVICE_OR_OPTION_NOT_IMPLEMENTED = 79,
+    CALL_FAIL_INVALID_TRANSACTION_IDENTIFIER = 81,
+    CALL_FAIL_USER_NOT_MEMBER_OF_CUG = 87,
+    CALL_FAIL_INCOMPATIBLE_DESTINATION = 88,
+    CALL_FAIL_INVALID_TRANSIT_NW_SELECTION = 91,
+    CALL_FAIL_SEMANTICALLY_INCORRECT_MESSAGE = 95,
+    CALL_FAIL_INVALID_MANDATORY_INFORMATION = 96,
+    CALL_FAIL_MESSAGE_TYPE_NON_IMPLEMENTED = 97,
+    CALL_FAIL_MESSAGE_TYPE_NOT_COMPATIBLE_WITH_PROTOCOL_STATE = 98,
+    CALL_FAIL_INFORMATION_ELEMENT_NON_EXISTENT = 99,
+    CALL_FAIL_CONDITIONAL_IE_ERROR = 100,
+    CALL_FAIL_MESSAGE_NOT_COMPATIBLE_WITH_PROTOCOL_STATE = 101,
+    CALL_FAIL_RECOVERY_ON_TIMER_EXPIRED = 102,
+    CALL_FAIL_PROTOCOL_ERROR_UNSPECIFIED = 111,
+    CALL_FAIL_INTERWORKING_UNSPECIFIED = 127,
+#endif
     CALL_FAIL_CALL_BARRED = 240,
     CALL_FAIL_FDN_BLOCKED = 241,
     CALL_FAIL_IMSI_UNKNOWN_IN_VLR = 242,
@@ -1388,6 +1454,14 @@ typedef struct {
     int enabled;
 } RIL_DataProfileInfo;
 
+#ifdef USE_QCOM_RIL
+/* Data Call Profile: Simple IP User Profile Parameters*/
+typedef struct {
+  int  profileId;
+  int  priority;       /* priority. [0..255], 0 - highest */
+} RIL_DataCallProfileInfo;
+#endif
+
 /**
  * RIL_REQUEST_GET_SIM_STATUS
  *
@@ -1546,6 +1620,32 @@ typedef struct {
 
 #define RIL_REQUEST_CHANGE_SIM_PIN2 7
 
+#ifdef USE_QCOM_RIL
+
+/**
+ * RIL_REQUEST_ENTER_DEPERSONALIZATION_CODE
+ *
+ * Requests that network personlization be deactivated
+ *
+ * "data" is const char **
+ * ((const char **)(data))[0]] is network depersonlization code
+ *
+ * "response" is int *
+ * ((int *)response)[0] is the number of retries remaining, or -1 if unknown
+ *
+ * Valid errors:
+ *
+ *  SUCCESS
+ *  RADIO_NOT_AVAILABLE (radio resetting)
+ *  GENERIC_FAILURE
+ *  PASSWORD_INCORRECT
+ *     (code is invalid)
+ */
+
+#define RIL_REQUEST_ENTER_DEPERSONALIZATION_CODE 8
+
+#else
+
 /**
  * RIL_REQUEST_ENTER_NETWORK_DEPERSONALIZATION
  *
@@ -1567,6 +1667,8 @@ typedef struct {
  */
 
 #define RIL_REQUEST_ENTER_NETWORK_DEPERSONALIZATION 8
+
+#endif
 
 /**
  * RIL_REQUEST_GET_CURRENT_CALLS
@@ -4347,6 +4449,52 @@ typedef struct {
  */
 #define RIL_REQUEST_SET_RADIO_CAPABILITY 131
 
+#ifdef USE_QCOM_RIL
+
+/**
+ * RIL_REQUEST_GET_DATA_CALL_PROFILE
+ *
+ * Get the Data Call Profile for a particular app type
+ *
+ * "data" is const int*
+ * (const int*)data[0] - App type. Value is specified the RUIM spec C.S0023-D
+ *
+ *
+ * "response" is a const char * containing the count and the array of profiles
+ * ((const int *)response)[0] Number RIL_DataCallProfileInfo structs(count)
+ * ((const char *)response)[1] is the buffer that contains 'count' number of
+ *                              RIL_DataCallProfileInfo structs.
+ *
+ * Valid errors:
+ *  SUCCESS
+ *  GENERIC_FAILURE
+ *  RIL_E_DATA_CALL_PROFILE_ERROR
+ *  RIL_E_DATA_CALL_PROFILE_NOT_AVAILABLE
+ *
+ */
+#define RIL_REQUEST_GET_DATA_CALL_PROFILE 132
+
+/**
+ * RIL_REQUEST_SIM_GET_ATR
+ *
+ * Get the ATR from SIM Card
+ *
+ * Only valid when radio state is "RADIO_STATE_ON"
+ *
+ * "data" is const int *
+ * ((const int *)data)[0] contains the slot index on the SIM from which ATR is requested.
+ *
+ * "response" is a const char * containing the ATR, See ETSI 102.221 8.1 and ISO/IEC 7816 3
+ *
+ * Valid errors:
+ *
+ * SUCCESS
+ * RADIO_NOT_AVAILABLE (radio resetting)
+ * GENERIC_FAILURE
+ */
+#define RIL_REQUEST_SIM_GET_ATR 133
+
+#endif
 
 /***********************************************************************/
 

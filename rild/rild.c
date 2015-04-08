@@ -38,6 +38,9 @@
 #define LIB_PATH_PROPERTY   "rild.libpath"
 #define LIB_ARGS_PROPERTY   "rild.libargs"
 #define MAX_LIB_ARGS        16
+#ifdef USE_QCOM_RIL
+#define MAX_CAP_NUM         ((CAP_LAST_CAP / 32) + 1)
+#endif
 
 static void usage(const char *argv0)
 {
@@ -101,7 +104,11 @@ void switchUser() {
     header.version = _LINUX_CAPABILITY_VERSION_3;
     header.pid = 0;
 
+#ifdef USE_QCOM_RIL
+    struct __user_cap_data_struct data[MAX_CAP_NUM];
+#else
     struct __user_cap_data_struct data[2];
+#endif
     memset(&data, 0, sizeof(data));
 
     data[CAP_TO_INDEX(CAP_NET_ADMIN)].effective |= CAP_TO_MASK(CAP_NET_ADMIN);
@@ -109,6 +116,11 @@ void switchUser() {
 
     data[CAP_TO_INDEX(CAP_NET_RAW)].effective |= CAP_TO_MASK(CAP_NET_RAW);
     data[CAP_TO_INDEX(CAP_NET_RAW)].permitted |= CAP_TO_MASK(CAP_NET_RAW);
+
+#ifdef USE_QCOM_RIL
+    data[CAP_TO_INDEX(CAP_BLOCK_SUSPEND)].effective |= CAP_TO_MASK(CAP_BLOCK_SUSPEND);
+    data[CAP_TO_INDEX(CAP_BLOCK_SUSPEND)].permitted |= CAP_TO_MASK(CAP_BLOCK_SUSPEND);
+#endif
 
     if (capset(&header, &data[0]) == -1) {
         RLOGE("capset failed: %s", strerror(errno));
@@ -150,7 +162,11 @@ int main(int argc, char **argv)
 
     if (clientId == NULL) {
         clientId = "0";
+#ifdef USE_QCOM_RIL
+    } else if (atoi(clientId) > MAX_RILDS) {
+#else
     } else if (atoi(clientId) >= MAX_RILDS) {
+#endif
         RLOGE("Max Number of rild's supported is: %d", MAX_RILDS);
         exit(0);
     }
@@ -178,7 +194,11 @@ int main(int argc, char **argv)
 #define  REFERENCE_RIL_PATH  "libreference-ril.so"
 
         /* first, read /proc/cmdline into memory */
+#ifdef USE_QCOM_RIL
+        char          buffer[1024] = {'\0'}, *p, *q;
+#else
         char          buffer[1024], *p, *q;
+#endif
         int           len;
         int           fd = open("/proc/cmdline",O_RDONLY);
 
