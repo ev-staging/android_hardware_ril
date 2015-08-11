@@ -1114,7 +1114,7 @@ constructCdmaSms(Parcel &p, RequestInfo *pRI, RIL_CDMA_SMS_Message& rcsm) {
     uint8_t ut;
     status_t status;
     int32_t digitCount;
-#ifdef USE_QCOM_RIL
+#ifndef USE_QCOM_RIL
     int digitLimit;
 #endif
 
@@ -1144,7 +1144,7 @@ constructCdmaSms(Parcel &p, RequestInfo *pRI, RIL_CDMA_SMS_Message& rcsm) {
     status = p.read(&ut,sizeof(ut));
     rcsm.sAddress.number_of_digits= (uint8_t) ut;
 
-#ifdef USE_QCOM_RIL
+#ifndef USE_QCOM_RIL
     digitLimit= MIN((rcsm.sAddress.number_of_digits), RIL_CDMA_SMS_ADDRESS_MAX);
     for(digitCount =0 ; digitCount < digitLimit; digitCount ++) {
 #else
@@ -1163,7 +1163,7 @@ constructCdmaSms(Parcel &p, RequestInfo *pRI, RIL_CDMA_SMS_Message& rcsm) {
     status = p.read(&ut,sizeof(ut));
     rcsm.sSubAddress.number_of_digits = (uint8_t) ut;
 
-#ifdef USE_QCOM_RIL
+#ifndef USE_QCOM_RIL
     digitLimit= MIN((rcsm.sSubAddress.number_of_digits), RIL_CDMA_SMS_SUBADDRESS_MAX);
     for(digitCount =0 ; digitCount < digitLimit; digitCount ++) {
 #else
@@ -1176,7 +1176,7 @@ constructCdmaSms(Parcel &p, RequestInfo *pRI, RIL_CDMA_SMS_Message& rcsm) {
     status = p.readInt32(&t);
     rcsm.uBearerDataLen = (int) t;
 
-#ifdef USE_QCOM_RIL
+#ifndef USE_QCOM_RIL
     digitLimit= MIN((rcsm.uBearerDataLen), RIL_CDMA_SMS_BEARER_DATA_MAX);
     for(digitCount =0 ; digitCount < digitLimit; digitCount ++) {
 #else
@@ -2769,12 +2769,12 @@ static int responseCdmaInformationRecords(Parcel &p,
                          CDMA_ALPHA_INFO_BUFFER_LENGTH);
                     return RIL_ERRNO_INVALID_RESPONSE;
                 }
-#else
                 // Write as a byteArray
                 p.writeInt32(infoRec->rec.display.alpha_len);
                 p.write(infoRec->rec.display.alpha_buf,
                         infoRec->rec.display.alpha_len);
                 break;
+#else
             case RIL_CDMA_DISPLAY_INFO_REC:
             case RIL_CDMA_EXTENDED_DISPLAY_INFO_REC:
                 if (infoRec->rec.display.alpha_len >
