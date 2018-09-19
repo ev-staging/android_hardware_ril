@@ -30,6 +30,7 @@
 #include <hidl/HidlTransportSupport.h>
 #include <utils/SystemClock.h>
 #include <inttypes.h>
+#include <cutils/properties.h>
 
 #define INVALID_HEX_CHAR 16
 
@@ -1326,8 +1327,12 @@ Return<void> RadioImpl::setNetworkSelectionModeManual(int32_t serial,
 #if VDBG
     RLOGD("setNetworkSelectionModeManual: serial %d", serial);
 #endif
+    std::string opNum = operatorNumeric;
+    if (!property_get_bool("ro.telephony.use_old_mnc_mcc_format", false)) {
+        opNum.append("+");
+    }
     dispatchString(serial, mSlotId, RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL,
-            operatorNumeric.c_str());
+            opNum.c_str());
     return Void();
 }
 
@@ -4579,7 +4584,12 @@ int radio::getAvailableNetworksResponse(int slotId,
             for (int i = 0, j = 0; i < numStrings; i = i + 4, j++) {
                 networks[j].alphaLong = convertCharPtrToHidlString(resp[i]);
                 networks[j].alphaShort = convertCharPtrToHidlString(resp[i + 1]);
+#ifndef OLD_MNC_FORMAT
                 networks[j].operatorNumeric = convertCharPtrToHidlString(resp[i + 2]);
+#else
+                const char *mccmncIdx = strrchr(resp[i + 2], '+');
+                networks[j].operatorNumeric = hidl_string(resp[i + 2], mccmncIdx - resp[i + 2]);
+#endif
                 int status = convertOperatorStatusToInt(resp[i + 3]);
                 if (status == -1) {
                     if (e == RIL_E_SUCCESS) responseInfo.error = RadioError::INVALID_RESPONSE;
